@@ -1,0 +1,13 @@
+{
+  "name": "js-assignment-2-master",
+  "version": "1.0.0",
+  "description": "KPRIET JavaScript Frameworks (U21CSP12) - Assignment II Complete Solutions",
+  "scripts": {
+    "q1:server": "node Question_1_Student_Management/server/server.js",
+    "q1:client": "npm --prefix Question_1_Student_Management/client run dev",
+    "q2:server": "node Question_2_Online_Bookstore/server/server.js",
+    "q2:client": "npm --prefix Question_2_Online_Bookstore/client run dev",
+    "q3:server": "node Question_3_Course_Registration/server/server.js",
+    "q3:client": "npm --prefix Question_3_Course_Registration/client start"
+  }
+}

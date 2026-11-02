@@ -1,0 +1,273 @@
+<div class="app-wrapper">
+  <!-- Navbar Header -->
+  <header class="navbar">
+    <div class="nav-container">
+      <div class="brand">
+        <span class="badge-mean">MEAN STACK</span>
+        <h1>College Course Registration Portal</h1>
+      </div>
+      <div class="nav-status">
+        <span class="status-indicator"></span>
+        <span>{{ storageInfo }}</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Banner Alerts -->
+  <div *ngIf="successMessage" class="banner banner-success">
+    <span>✓ {{ successMessage }}</span>
+    <button class="banner-close" (click)="successMessage = ''">&times;</button>
+  </div>
+  <div *ngIf="errorMessage" class="banner banner-error">
+    <span>⚠ {{ errorMessage }}</span>
+    <button class="banner-close" (click)="errorMessage = ''">&times;</button>
+  </div>
+
+  <main class="main-body">
+    <!-- Hero / Stats Section -->
+    <div class="hero-card">
+      <div class="hero-left">
+        <h2>Semester Course Enrollment</h2>
+        <p>Register for elective and core courses, track remaining batch seats, and manage registration cancellations seamlessly.</p>
+      </div>
+
+      <!-- Navigation Tabs -->
+      <div class="tab-controls">
+        <button
+          class="tab-btn"
+          [class.active]="activeTab === 'courses'"
+          (click)="activeTab = 'courses'"
+        >
+          📚 Available Courses & Register
+        </button>
+        <button
+          class="tab-btn"
+          [class.active]="activeTab === 'my-courses'"
+          (click)="activeTab = 'my-courses'"
+        >
+          📋 My Registrations & Cancel
+        </button>
+      </div>
+    </div>
+
+    <!-- TAB 1: Courses Catalog + Registration Form -->
+    <div *ngIf="activeTab === 'courses'" class="content-grid">
+      <!-- Left: Angular Reactive Form -->
+      <div class="panel form-panel">
+        <div class="panel-header">
+          <h3>Student Course Registration</h3>
+          <p class="subtext">Validated using Angular Reactive Forms</p>
+        </div>
+
+        <form [formGroup]="registrationForm" (ngSubmit)="onSubmitRegistration()" novalidate>
+          <!-- Full Name -->
+          <div class="form-field">
+            <label>Student Full Name <span class="req">*</span></label>
+            <input
+              type="text"
+              formControlName="studentName"
+              placeholder="e.g. Kavitha R"
+              [class.is-invalid]="submitted && f['studentName'].errors"
+            />
+            <div *ngIf="submitted && f['studentName'].errors" class="val-error">
+              <span *ngIf="f['studentName'].errors['required']">Full name is required.</span>
+              <span *ngIf="f['studentName'].errors['minlength']">Name must be at least 3 characters.</span>
+            </div>
+          </div>
+
+          <!-- Roll Number -->
+          <div class="form-field">
+            <label>Roll Number <span class="req">*</span></label>
+            <input
+              type="text"
+              formControlName="studentRollNo"
+              placeholder="e.g. 21CS045"
+              [class.is-invalid]="submitted && f['studentRollNo'].errors"
+            />
+            <div *ngIf="submitted && f['studentRollNo'].errors" class="val-error">
+              <span *ngIf="f['studentRollNo'].errors['required']">Roll number is required.</span>
+              <span *ngIf="f['studentRollNo'].errors['pattern']">Format must be e.g. 21CS045 (2 digits + Dept + 3 digits).</span>
+            </div>
+          </div>
+
+          <!-- Email Address -->
+          <div class="form-field">
+            <label>Student Email <span class="req">*</span></label>
+            <input
+              type="email"
+              formControlName="studentEmail"
+              placeholder="e.g. kavitha.r@kpriet.ac.in"
+              [class.is-invalid]="submitted && f['studentEmail'].errors"
+            />
+            <div *ngIf="submitted && f['studentEmail'].errors" class="val-error">
+              <span *ngIf="f['studentEmail'].errors['required']">Email address is required.</span>
+              <span *ngIf="f['studentEmail'].errors['email']">Enter a valid email address.</span>
+            </div>
+          </div>
+
+          <!-- Department and Semester Row -->
+          <div class="form-row-2">
+            <div class="form-field">
+              <label>Department <span class="req">*</span></label>
+              <select formControlName="studentDept">
+                <option *ngFor="let dept of departments" [value]="dept">{{ dept }}</option>
+              </select>
+            </div>
+
+            <div class="form-field">
+              <label>Semester <span class="req">*</span></label>
+              <select formControlName="studentSemester">
+                <option *ngFor="let sem of semesters" [value]="sem">Sem {{ sem }}</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Course Selection -->
+          <div class="form-field">
+            <label>Select Course <span class="req">*</span></label>
+            <select
+              formControlName="courseCode"
+              [class.is-invalid]="submitted && f['courseCode'].errors"
+            >
+              <option value="">-- Choose Course from List --</option>
+              <option *ngFor="let c of courses" [value]="c.courseCode" [disabled]="c.availableSlots <= 0">
+                {{ c.courseCode }}: {{ c.courseName }} ({{ c.availableSlots }} seats left)
+              </option>
+            </select>
+            <div *ngIf="submitted && f['courseCode'].errors" class="val-error">
+              <span *ngIf="f['courseCode'].errors['required']">Please select a course to register.</span>
+            </div>
+          </div>
+
+          <div class="form-buttons">
+            <button type="submit" class="btn btn-primary" [disabled]="loading">
+              {{ loading ? 'Submitting...' : 'Register Course' }}
+            </button>
+            <button type="button" class="btn btn-light" (click)="resetForm()">
+              Clear
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Right: Courses List (Angular ngFor) -->
+      <div class="panel list-panel">
+        <div class="panel-header">
+          <h3>Available Courses ({{ courses.length }})</h3>
+          <p class="subtext">Select a course below to auto-populate the registration form</p>
+        </div>
+
+        <div class="course-list">
+          <div
+            *ngFor="let c of courses"
+            class="course-card"
+            [class.selected]="selectedCourse?.courseCode === c.courseCode"
+            [class.full]="c.availableSlots <= 0"
+          >
+            <div class="course-header">
+              <div class="code-dept">
+                <span class="badge-code">{{ c.courseCode }}</span>
+                <span class="badge-credits">{{ c.credits }} Credits</span>
+              </div>
+              <span
+                class="badge-slot"
+                [class.slot-avail]="c.availableSlots > 10"
+                [class.slot-low]="c.availableSlots > 0 && c.availableSlots <= 10"
+                [class.slot-full]="c.availableSlots <= 0"
+              >
+                {{ c.availableSlots > 0 ? c.availableSlots + ' / ' + c.totalSlots + ' seats left' : 'Class Full' }}
+              </span>
+            </div>
+
+            <h4 class="course-title">{{ c.courseName }}</h4>
+            <p class="course-desc">{{ c.description }}</p>
+
+            <div class="course-meta">
+              <span>👨‍🏫 {{ c.instructor }}</span>
+              <span>📅 {{ c.schedule }}</span>
+            </div>
+
+            <div class="course-actions">
+              <button
+                class="btn-enroll"
+                [disabled]="c.availableSlots <= 0"
+                (click)="selectCourseForRegistration(c)"
+              >
+                {{ c.availableSlots > 0 ? 'Select Course for Registration' : 'Seats Filled' }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 2: My Registrations & Cancellation -->
+    <div *ngIf="activeTab === 'my-courses'" class="my-courses-panel">
+      <div class="panel">
+        <div class="panel-header">
+          <h3>Student Enrollment Lookup & Cancellation</h3>
+          <p class="subtext">Enter student roll number to view enrolled courses and manage cancellations</p>
+        </div>
+
+        <div class="lookup-bar">
+          <input
+            type="text"
+            [(ngModel)]="lookupRollNo"
+            placeholder="Enter Roll Number (e.g. 21CS045)..."
+            (keyup.enter)="searchRegistrationsByRollNo()"
+          />
+          <button class="btn btn-primary" (click)="searchRegistrationsByRollNo()" [disabled]="loading">
+            Search Registrations
+          </button>
+        </div>
+
+        <div *ngIf="studentRegistrations.length === 0" class="empty-state">
+          <p>No course registrations found for "{{ lookupRollNo || 'this student' }}".</p>
+          <small>Register for courses from the "Available Courses" tab to view them here.</small>
+        </div>
+
+        <div *ngIf="studentRegistrations.length > 0" class="registered-table-wrapper">
+          <table class="registered-table">
+            <thead>
+              <tr>
+                <th>Course Code</th>
+                <th>Course Name</th>
+                <th>Student Details</th>
+                <th>Registered On</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let reg of studentRegistrations">
+                <td>
+                  <span class="badge-code">{{ reg.courseCode }}</span>
+                </td>
+                <td>
+                  <strong>{{ reg.courseName }}</strong>
+                </td>
+                <td>
+                  <div>{{ reg.studentName }} ({{ reg.studentRollNo }})</div>
+                  <div class="subtext">{{ reg.studentDept }} • Sem {{ reg.studentSemester }}</div>
+                </td>
+                <td>{{ reg.registeredAt | date: 'mediumDate' }}</td>
+                <td>
+                  <button
+                    class="btn-cancel-reg"
+                    (click)="cancelRegistration(reg)"
+                    [disabled]="loading"
+                  >
+                    Cancel Registration
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="app-footer">
+    <p>JavaScript Frameworks (U21CSP12) — Assignment II • Course Registration Application (MEAN Stack)</p>
+  </footer>
+</div>
